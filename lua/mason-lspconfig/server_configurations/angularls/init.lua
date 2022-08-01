@@ -22,6 +22,8 @@ return function(install_dir)
                 },
                 ","
             ),
+            "--includeAutomaticOptionalChainCompletions",
+            "--includeCompletionsWithSnippetText",
         }
         if platform.is_win then
             cmd[1] = vim.fn.exepath(cmd[1])
