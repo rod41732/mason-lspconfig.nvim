@@ -61,6 +61,21 @@ describe("mason-lspconfig setup", function()
     )
 
     it(
+        "should notify when installing servers listed in ensure_installed",
+        async_test(function()
+            spy.on(vim, "notify")
+            spy.on(Pkg, "install")
+
+            mason_lspconfig.setup { ensure_installed = { "dummylsp" } }
+
+            assert.spy(vim.notify).was_called(1)
+            assert
+                .spy(vim.notify)
+                .was_called_with([[[mason-lspconfig.nvim] installing dummylsp]], vim.log.levels.INFO, { title = "mason.nvim" })
+        end)
+    )
+
+    it(
         "should automatically install servers",
         async_test(function()
             local dummy = registry.get_package "dummy"
@@ -86,6 +101,39 @@ describe("mason-lspconfig setup", function()
             end)
         end)
     )
+
+    it("should apply mason-lspconfig server configs", function()
+        stub(registry, "is_installed")
+        registry.is_installed.on_call_with("dummy").returns(true)
+        server_mappings.lspconfig_to_package["dummylsp"] = "dummy"
+        package.loaded["mason-lspconfig.server_configurations.dummylsp"] = function()
+            return { cmd = { "mason-cmd" } }
+        end
+        local config = { name = "dummylsp" }
+
+        mason_lspconfig.setup()
+        local on_setup = require("lspconfig.util").on_setup
+        on_setup(config)
+
+        assert.same({ name = "dummylsp", cmd = { "mason-cmd" } }, config)
+    end)
+
+    it("should let user config take precedence", function()
+        stub(registry, "is_installed")
+        registry.is_installed.on_call_with("dummy").returns(true)
+        server_mappings.lspconfig_to_package["dummylsp"] = "dummy"
+        package.loaded["mason-lspconfig.server_configurations.dummylsp"] = function()
+            return { cmd = { "mason-cmd" } }
+        end
+        local config = { name = "dummylsp" }
+        local user_config = { cmd = { "user-cmd" } }
+
+        mason_lspconfig.setup()
+        local on_setup = require("lspconfig.util").on_setup
+        on_setup(config, user_config)
+
+        assert.same({ name = "dummylsp", cmd = { "user-cmd" } }, config)
+    end)
 end)
 
 describe("mason-lspconfig setup_handlers", function()
@@ -134,8 +182,27 @@ describe("mason-lspconfig setup_handlers", function()
         }
         assert.spy(vim.notify).was_called(1)
         assert.spy(vim.notify).was_called_with(
-            "[mason.nvim] mason-lspconfig.setup_handlers: Received handler for unknown lspconfig server name: doesnt_exist_server.",
-            vim.log.levels.WARN
+            "mason-lspconfig.setup_handlers: Received handler for unknown lspconfig server name: doesnt_exist_server.",
+            vim.log.levels.WARN,
+            { title = "mason.nvim" }
+        )
+    end)
+
+    it("should print warning when providing invalid server entries in ensure_installed", function()
+        spy.on(vim, "notify")
+        mason_lspconfig.setup {
+            ensure_installed = { "yamllint", "hadolint" },
+        }
+        assert.spy(vim.notify).was_called(2)
+        assert.spy(vim.notify).was_called_with(
+            [[[mason-lspconfig.nvim] Server "yamllint" is not a valid entry in ensure_installed. Make sure to only provide lspconfig server names.]],
+            vim.log.levels.WARN,
+            { title = "mason.nvim" }
+        )
+        assert.spy(vim.notify).was_called_with(
+            [[[mason-lspconfig.nvim] Server "hadolint" is not a valid entry in ensure_installed. Make sure to only provide lspconfig server names.]],
+            vim.log.levels.WARN,
+            { title = "mason.nvim" }
         )
     end)
 end)

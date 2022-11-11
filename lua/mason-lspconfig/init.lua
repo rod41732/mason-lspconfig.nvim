@@ -11,7 +11,13 @@ function M.setup(config)
         settings.set(config)
     end
 
-    require "mason-lspconfig.lspconfig_hook"()
+    local ok, err = pcall(function()
+        require "mason-lspconfig.lspconfig_hook"()
+        require "mason-lspconfig.server_config_extensions"()
+    end)
+    if not ok then
+        log.error("Failed to set up lspconfig integration.", err)
+    end
 
     if #settings.current.ensure_installed > 0 then
         require "mason-lspconfig.ensure_installed"()
@@ -52,7 +58,7 @@ function M.setup_handlers(handlers)
             log.fmt_trace("Calling handler for %s", server_name)
             local ok, err = pcall(handler, server_name)
             if not ok then
-                vim.notify(err, vim.log.levels.ERROR)
+                notify(err, vim.log.levels.ERROR)
             end
         end)
     end
@@ -76,6 +82,65 @@ function M.get_installed_servers()
     return _.filter_map(function(pkg_name)
         return Optional.of_nilable(server_mapping.package_to_lspconfig[pkg_name])
     end, registry.get_installed_package_names())
+end
+
+---@param filetype string | string[]
+local function is_server_in_filetype(filetype)
+    local filetype_mapping = require "mason-lspconfig.mappings.filetype"
+
+    local function get_servers_by_filetype(ft)
+        return filetype_mapping[ft] or {}
+    end
+
+    local server_candidates = _.compose(
+        _.set_of,
+        _.cond {
+            { _.is "string", get_servers_by_filetype },
+            { _.is "table", _.compose(_.flatten, _.map(get_servers_by_filetype)) },
+            { _.T, _.always {} },
+        }
+    )(filetype)
+
+    ---@param server_name string
+    ---@return boolean
+    return function(server_name)
+        return server_candidates[server_name]
+    end
+end
+
+---Get a list of available servers in mason-registry
+---@param filter { filetype: string | string[] }?: (optional) Used to filter the list of server names.
+--- The available keys are
+---   - filetype (string | string[]): Only return servers with matching filetype
+---@return string[]
+function M.get_available_servers(filter)
+    local registry = require "mason-registry"
+    local server_mapping = require "mason-lspconfig.mappings.server"
+    local Optional = require "mason-core.optional"
+    filter = filter or {}
+    local predicates = {}
+
+    if filter.filetype then
+        table.insert(predicates, is_server_in_filetype(filter.filetype))
+    end
+
+    return _.filter_map(function(pkg_name)
+        return Optional.of_nilable(server_mapping.package_to_lspconfig[pkg_name]):map(function(server_name)
+            if #predicates == 0 or _.all_pass(predicates, server_name) then
+                return server_name
+            end
+        end)
+    end, registry.get_all_package_names())
+end
+
+---Returns the "lspconfig <-> mason" mapping tables.
+---@return { lspconfig_to_mason: table<string, string>, mason_to_lspconfig: table<string, string> }
+function M.get_mappings()
+    local mappings = require "mason-lspconfig.mappings.server"
+    return {
+        lspconfig_to_mason = mappings.lspconfig_to_package,
+        mason_to_lspconfig = mappings.package_to_lspconfig,
+    }
 end
 
 return M

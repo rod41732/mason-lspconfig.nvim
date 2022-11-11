@@ -8,8 +8,9 @@
 <p align="center">
     <code>mason-lspconfig</code> bridges <a
     href="https://github.com/williamboman/mason.nvim"><code>mason.nvim</code></a> with the <a
-    href="https://github.com/neovim/nvim-lspconfig"><code>lspconfig</code></a> plugin - making it easier to use the both
-    plugins together.
+    href="https://github.com/neovim/nvim-lspconfig"><code>lspconfig</code></a> plugin - making it easier to use both
+    plugins together.<br />
+    <code>:help mason-lspconfig.nvim</code>
 </p>
 
 # Table of Contents
@@ -18,13 +19,17 @@
 -   [Requirements](#requirements)
 -   [Installation](#installation)
 -   [Setup](#setup)
+    -   [Automatic server setup (advanced feature)](#automatic-server-setup-advanced-feature)
 -   [Commands](#commands)
 -   [Configuration](#configuration)
+    -   [Default configuration](#default-configuration)
+-   [Available LSP servers](#available-lsp-servers)
 
 # Introduction
 
-`mason-lspconfig.nvim` closes some gaps that exist between `mason.nvim` and `lspconfig`. Its main responsibilities is
-to:
+> `:h mason-lspconfig-introduction`
+
+`mason-lspconfig.nvim` closes some gaps that exist between `mason.nvim` and `lspconfig`. Its main responsibilities are to:
 
 -   register a setup hook with `lspconfig` that ensures servers installed with `mason.nvim` are set up with the necessary
     configuration
@@ -39,6 +44,8 @@ users).
 table for a complete mapping.](./doc/server-mapping.md)**
 
 # Requirements
+
+> `:h mason-lspconfig-requirements`
 
 -   neovim `>= 0.7.0`
 -   `mason.nvim`
@@ -66,19 +73,46 @@ Plug 'neovim/nvim-lspconfig'
 
 # Setup
 
+> `:h mason-lspconfig-quickstart`
+
+It's important that you set up the plugins in the following order:
+
+1. `mason.nvim`
+2. `mason-lspconfig.nvim`
+3. Setup servers via `lspconfig`
+
+Pay extra attention to this if you lazy-load plugins, or somehow "chain" the loading of plugins via your plugin manager.
+
 ```lua
 require("mason").setup()
 require("mason-lspconfig").setup()
+
+-- After setting up mason-lspconfig you may set up servers via lspconfig
+-- require("lspconfig").sumneko_lua.setup {}
+-- require("lspconfig").rust_analyzer.setup {}
+-- ...
 ```
 
 Refer to the [Configuration](#configuration) section for information about which settings are available.
 
+## Automatic server setup (advanced feature)
+
+> `:h mason-lspconfig-automatic-server-setup`
+
+`mason-lspconfig` provides extra, opt-in, functionality that allows you to automatically set up LSP servers installed
+via `mason.nvim` without having to manually add each server setup to your Neovim configuration.
+Refer to `:h mason-lspconfig-automatic-server-setup` for more details.
+
 # Commands
+
+> `:h mason-lspconfig-commands`
 
 -   `:LspInstall [<server>...]` - installs the provided servers
 -   `:LspUninstall <server> ...` - uninstalls the provided servers
 
 # Configuration
+
+> `:h mason-lspconfig-settings`
 
 You may optionally configure certain behavior of `mason-lspconfig.nvim` when calling the `.setup()` function. Refer to
 the [default configuration](#default-configuration) for a list of all available settings.
@@ -109,3 +143,142 @@ local DEFAULT_SETTINGS = {
     automatic_installation = false,
 }
 ```
+
+# Available LSP servers
+
+| Language                            | Server name                |
+| ----------------------------------- | -------------------------- |
+| AWK                                 | `awk_ls`                   |
+| Ada                                 | `als`                      |
+| Angular                             | `angularls`                |
+| Ansible                             | `ansiblels`                |
+| Apex                                | `apex_ls`                  |
+| Arduino                             | `arduino_language_server`  |
+| Assembly (GAS/NASM, GO)             | `asm_lsp`                  |
+| Astro                               | `astro`                    |
+| Bash                                | `bashls`                   |
+| Beancount                           | `beancount`                |
+| Bicep                               | `bicep`                    |
+| Buf                                 | `bufls`                    |
+| C                                   | `clangd`                   |
+| C#                                  | `csharp_ls`                |
+| C# [(docs)][omnisharp]              | `omnisharp_mono`           |
+| C# [(docs)][omnisharp]              | `omnisharp`                |
+| C++                                 | `clangd`                   |
+| CMake                               | `cmake`                    |
+| CSS                                 | `cssls`                    |
+| CSS                                 | `cssmodules_ls`            |
+| Clarity                             | `clarity_lsp`              |
+| Clojure                             | `clojure_lsp`              |
+| CodeQL                              | `codeqlls`                 |
+| Crystal                             | `crystalline`              |
+| Cucumber                            | `cucumber_language_server` |
+| Cue                                 | `dagger`                   |
+| Deno                                | `denols`                   |
+| Dhall                               | `dhall_lsp_server`         |
+| Diagnostic (general purpose server) | `diagnosticls`             |
+| Dlang                               | `serve_d`                  |
+| Docker                              | `dockerls`                 |
+| Dot                                 | `dotls`                    |
+| EFM (general purpose server)        | `efm`                      |
+| ESLint                              | `eslint`                   |
+| Elixir                              | `elixirls`                 |
+| Elm                                 | `elmls`                    |
+| Ember                               | `ember`                    |
+| Emmet                               | `emmet_ls`                 |
+| Erg                                 | `erg_language_server`      |
+| Erlang                              | `erlangls`                 |
+| F#                                  | `fsautocomplete`           |
+| Flux                                | `flux_lsp`                 |
+| Foam (OpenFOAM)                     | `foam_ls`                  |
+| Fortran                             | `fortls`                   |
+| Glint                               | `glint`                    |
+| Go                                  | `golangci_lint_ls`         |
+| Go                                  | `gopls`                    |
+| Gradle                              | `gradle_ls`                |
+| Grammarly                           | `grammarly`                |
+| GraphQL                             | `graphql`                  |
+| Groovy                              | `groovyls`                 |
+| HTML                                | `html`                     |
+| Haskell                             | `hls`                      |
+| Haxe                                | `haxe_language_server`     |
+| Hoon                                | `hoon_ls`                  |
+| JSON                                | `jsonls`                   |
+| Java                                | `jdtls`                    |
+| JavaScript                          | `quick_lint_js`            |
+| JavaScript                          | `tsserver`                 |
+| Jsonnet                             | `jsonnet_ls`               |
+| Julia [(docs)][julials]             | `julials`                  |
+| Kotlin                              | `kotlin_language_server`   |
+| LaTeX                               | `ltex`                     |
+| LaTeX                               | `texlab`                   |
+| Lelwel                              | `lelwel_ls`                |
+| Lua                                 | `sumneko_lua`              |
+| Luau                                | `luau_lsp`                 |
+| Markdown                            | `marksman`                 |
+| Markdown                            | `prosemd_lsp`              |
+| Markdown                            | `remark_ls`                |
+| Markdown                            | `zk`                       |
+| Metamath Zero                       | `mm0_ls`                   |
+| Nickel                              | `nickel_ls`                |
+| Nim                                 | `nimls`                    |
+| Nix                                 | `rnix`                     |
+| OCaml                               | `ocamllsp`                 |
+| OneScript, 1C:Enterprise            | `bsl_ls`                   |
+| OpenCL                              | `opencl_ls`                |
+| PHP                                 | `intelephense`             |
+| PHP                                 | `phpactor`                 |
+| PHP                                 | `psalm`                    |
+| Perl                                | `perlnavigator`            |
+| Powershell                          | `powershell_es`            |
+| Prisma                              | `prismals`                 |
+| Puppet                              | `puppet`                   |
+| PureScript                          | `purescriptls`             |
+| Python                              | `jedi_language_server`     |
+| Python                              | `pyright`                  |
+| Python                              | `sourcery`                 |
+| Python [(docs)][pylsp]              | `pylsp`                    |
+| R                                   | `r_language_server`        |
+| ReScript                            | `rescriptls`               |
+| Reason                              | `reason_ls`                |
+| Robot Framework                     | `robotframework_ls`        |
+| Rome                                | `rome`                     |
+| Ruby                                | `ruby_ls`                  |
+| Ruby                                | `solargraph`               |
+| Rust                                | `rust_analyzer`            |
+| SQL                                 | `sqlls`                    |
+| SQL                                 | `sqls`                     |
+| Salt                                | `salt_ls`                  |
+| Shopify Theme Check                 | `theme_check`              |
+| Slint                               | `slint_lsp`                |
+| Solidity                            | `solang`                   |
+| Solidity                            | `solc`                     |
+| Solidity                            | `solidity`                 |
+| Sorbet                              | `sorbet`                   |
+| Sphinx                              | `esbonio`                  |
+| Stylelint                           | `stylelint_lsp`            |
+| Svelte                              | `svelte`                   |
+| SystemVerilog                       | `svlangserver`             |
+| SystemVerilog                       | `svls`                     |
+| SystemVerilog                       | `verible`                  |
+| TOML                                | `taplo`                    |
+| Tailwind CSS                        | `tailwindcss`              |
+| Teal                                | `teal_ls`                  |
+| Terraform                           | `terraformls`              |
+| Terraform [(docs)][tflint]          | `tflint`                   |
+| TypeScript                          | `tsserver`                 |
+| V                                   | `vls`                      |
+| Vala                                | `vala_ls`                  |
+| VimL                                | `vimls`                    |
+| Visualforce                         | `visualforce`              |
+| Vue                                 | `volar`                    |
+| Vue                                 | `vuels`                    |
+| WGSL                                | `wgsl_analyzer`            |
+| XML                                 | `lemminx`                  |
+| YAML                                | `yamlls`                   |
+| Zig                                 | `zls`                      |
+
+[julials]: ./lua/mason-lspconfig/server_configurations/julials/README.md
+[omnisharp]: ./lua/mason-lspconfig/server_configurations/omnisharp/README.md
+[pylsp]: ./lua/mason-lspconfig/server_configurations/pylsp/README.md
+[tflint]: ./lua/mason-lspconfig/server_configurations/tflint/README.md

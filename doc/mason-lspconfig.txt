@@ -1,14 +1,15 @@
-*mason-lspconfig*
+*mason-lspconfig.nvim*
 
 Minimum version of neovim: 0.7.0
 
 Author: William Boman
+                                       Type |gO| to see the table of contents.
 
 ==============================================================================
 INTRODUCTION                                    *mason-lspconfig-introduction*
 
 `mason-lspconfig.nvim` closes some gaps that exist between `mason.nvim` and
-`lspconfig`. Its main responsibilities is to:
+`lspconfig`. Its main responsibilities are to:
 
 -   register a setup hook with `lspconfig` that ensures servers installed with
     `mason.nvim` are set up with the necessary configuration
@@ -29,22 +30,40 @@ Note: ~
 ==============================================================================
 REQUIREMENTS                                    *mason-lspconfig-requirements*
 
-`mason-lspconfig` requires `mason.nvim` & `lspconfig` to be installed. Note
-that `lspconfig` needs to be available when setting up `mason-lspconfig` - so
-if you lazy load either plugin make sure `lspconfig` is not loaded after
+`mason-lspconfig` requires `mason.nvim` & `lspconfig` to be installed.
+Note that `lspconfig` needs to be available in |rtp| by the time you set up
 `mason-lspconfig`.
 
-Also, make sure not to set up any servers via `lspconfig` _before_ calling
-`mason-lspconfig`'s setup function.
+Make sure to set up `mason` and `mason-lspconfig.nvim` before setting up
+servers via `lspconfig`.
 
 ==============================================================================
 QUICK START                                       *mason-lspconfig-quickstart*
 
-The only thing needed to enable the `mason-lspconfig` plugin is to make sure
-to call the `setup()` function:
+-----------------
+Setting up mason-lspconfig.nvim
+
+It's important that you set up the plugins in the following order:
+
+1. `mason.nvim`
+2. `mason-lspconfig.nvim`
+3. Setup servers via `lspconfig`
+
+Note: ~
+    `lspconfig` needs to be available in |rtp| so that `mason-lspconfig` can
+    successfully call `require("lspconfig")` (|lua-require|) during setup.
+    Pay extra attention to this if you lazy-load plugins, or somehow "chain"
+    the loading of plugins via your plugin manager.
+
+To enable the `mason-lspconfig` plugin, call the `setup()` function, like so:
 
     require("mason").setup()
     require("mason-lspconfig").setup()
+
+Refer to |mason-lspconfig-settings| for available settings.
+
+-----------------
+Setting up servers
 
 Next, you're ready to set up the servers you want to use. Refer to lspconfig's
 documentation |lspconfig-quickstart| for more information on how to do so!
@@ -53,16 +72,19 @@ documentation |lspconfig-quickstart| for more information on how to do so!
     require("lspconfig").rust_analyzer.setup {}
 
 Automatic server setup (advanced feature): ~
-    Refer to |mason-lspconfig.setup_handlers()| (advanced feature) for an
-    alternative method of setting up servers that don't require you to do so
-    imperatively for each server.
+    Refer to |mason-lspconfig-dynamic-server-setup| (advanced feature) for an
+    alternative method of setting up servers that doesn't require you to
+    imperatively set up each server one by one.
+
+-----------------
+Installation of servers
 
 To install an LSP server supported by lspconfig (and mason.nvim) you may use
 the `:LspInstall` command, like so:
 
     :LspInstall rust_analyzer sumneko_lua
 
-This command is more or less an alias of the `:MasonInstall` command, except
+This command is more or less an alias of the |:MasonInstall| command, except
 that it only accepts LSP servers and - more importantly - only accepts
 lspconfig server names (as opposed to mason.nvim package names).
 
@@ -125,17 +147,20 @@ Example:
     }
 
 ==============================================================================
-DYNAMIC SERVER SETUP                    *mason-lspconfig-dynamic-server-setup*
+AUTOMATIC SERVER SETUP                *mason-lspconfig-automatic-server-setup*
+                                        *mason-lspconfig-dynamic-server-setup*
 
-`mason-lspconfig` provides extra opt-in functionality that allow you to set up
-LSP servers installed with `mason.nvim` without having to manually edit your
-Neovim configuration for every single server you want to use. This is also
-convenient if you want to use `mason.nvim` as the main control mechanism for
-which servers to set up. It also makes it possible to use newly installed
-servers without having to restart Neovim! Example:
+
+`mason-lspconfig` provides extra, opt-in, functionality that allows you to
+automatically set up LSP servers installed via `mason.nvim` without having to
+manually add each server setup to your Neovim configuration. It also makes it
+possible to use newly installed servers without having to restart Neovim!
+
+Example:
 
     require("mason").setup()
     require("mason-lspconfig").setup()
+
     require("mason-lspconfig").setup_handlers {
         -- The first entry (without a key) will be the default handler
         -- and will be called for each installed server that doesn't have
@@ -143,12 +168,17 @@ servers without having to restart Neovim! Example:
         function (server_name) -- default handler (optional)
             require("lspconfig")[server_name].setup {}
         end,
-        -- Next, you can provide targeted overrides for specific servers.
+        -- Next, you can provide a dedicated handler for specific servers.
         -- For example, a handler override for the `rust_analyzer`:
         ["rust_analyzer"] = function ()
             require("rust-tools").setup {}
         end
     }
+
+Note: ~
+    If you use this approach, make sure you don't also manually set up servers
+    directly via `lspconfig` as this will cause servers to be set up more than
+    once.
 
 Refer to |mason-lspconfig.setup_handlers()| for more information.
 
@@ -169,7 +199,12 @@ setup_handlers({handlers})
         following their guides, see |lspconfig-quickstart|.
 
     Registers the provided {handlers}, to be called by mason when an installed
-    server supported by lspconfig is ready to be setup.
+    server supported by lspconfig is ready to be set up.
+
+    When this function is called, all servers that are currently installed
+    will be considered ready to be set up. When a new server is installed
+    during a session, it will be considered ready to be set up when
+    installation succeeds.
 
     {handlers} is a table where the keys are the name of an lspconfig server,
     and the values are the function to be called when that server is ready to
@@ -184,31 +219,30 @@ setup_handlers({handlers})
        mason's package names, so for example instead of "lua-language-server"
        it's "sumneko_lua".
 
-    Example: ~
-
-        require("mason-lspconfig").setup_handlers({
-            -- The first entry (without a key) will be the default handler
-            -- and will be called for each installed server that doesn't have
-            -- a dedicated handler.
-            function (server_name) -- default handler (optional)
-                require("lspconfig")[server_name].setup {}
-            end,
-            -- Next, you can provide targeted overrides for specific servers.
-            ["rust_analyzer"] = function ()
-                require("rust-tools").setup {}
-            end,
-            ["sumneko_lua"] = function ()
-                lspconfig.sumneko_lua.setup {
-                    settings = {
-                        Lua = {
-                            diagnostics = {
-                                globals = { "vim" }
-                            }
-                        }
-                    }
-                }
-            end,
-        })
+   Example: ~
+       require("mason-lspconfig").setup_handlers({
+           -- The first entry (without a key) will be the default handler
+           -- and will be called for each installed server that doesn't have
+           -- a dedicated handler.
+           function (server_name) -- default handler (optional)
+               require("lspconfig")[server_name].setup {}
+           end,
+           -- Next, you can provide targeted overrides for specific servers.
+           ["rust_analyzer"] = function ()
+               require("rust-tools").setup {}
+           end,
+           ["sumneko_lua"] = function ()
+               lspconfig.sumneko_lua.setup {
+                   settings = {
+                       Lua = {
+                           diagnostics = {
+                               globals = { "vim" }
+                           }
+                       }
+                   }
+               }
+           end,
+       })
 
     See also: ~
         You may achieve similar behaviour by manually looping through the
@@ -233,5 +267,38 @@ get_installed_servers()
         |mason-registry.get_installed_packages()|
         |mason-registry.get_installed_package_names()|
 
+                                     *mason-lspconfig.get_available_servers()*
+get_available_servers({filter})
+    Returns the available (both installed & uninstalled) LSP servers.
+
+    Note: ~
+        The returned strings are the lspconfig server names, not the mason
+        package names. For example, "sumneko_lua" is returned instead of
+        "lua-language-server". This is useful if you want to loop through the
+        table and use its values to directly interact with lspconfig (for
+        example setting up all installed servers).
+
+    Parameters: ~
+        {filter}  (table|nil) A table with key-value pairs used to
+                  filter the list of server names. The available keys are:
+                  - filetype (string | string[]): Only return servers with
+                    matching filetype
+
+    Returns: ~
+        string[]
+
+    See also: ~
+        |mason-registry.get_all_packages()|
+        |mason-registry.get_all_package_names()|
+
+                                              *mason-lspconfig.get_mappings()*
+get_mappings()
+    Returns the server name mappings between lspconfig and Mason.
+
+    Returns: ~
+        {
+            lspconfig_to_mason: table<string, string>,
+            mason_to_lspconfig: table<string, string>
+        }
 
  vim:tw=78:ft=help:norl:expandtab:sw=4
